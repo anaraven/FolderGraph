@@ -54,17 +54,17 @@ def add_pct(g, thr, out = []):
         try:
             pct0 = int(count*1000/nf0)/10
         except ZeroDivisionError:
-            print g.vs["name"][e0], nf0, nf1
+            print g.vs["name"][e0], nf0, nf1, count
             pct0 = 0
         try:
             pct1 = int(count*1000/nf1)/10
         except ZeroDivisionError:
-            print g.vs["name"][e0], nf0, nf1
+            print g.vs["name"][e0], nf0, nf1, count
             pct1 = 0
         pct = max(pct0, pct1)
         if pct >= thr:
             out.append( (pct, g.vs["name"][e0], nf0, pct0,
-                              g.vs["name"][e1], nf1, pct1) )
+                              g.vs["name"][e1], nf1, pct1, count) )
     return out
 
 nodes = []
@@ -76,7 +76,7 @@ for line in file(dup_filename, "r"):
     if should_ignore(line):
         continue
     duptype, iden, depth, size, device, inode, priority, name = line.strip().split(" ", 7)
-    if int(size)<100000000:
+    if int(size)<1e8:
         continue
     dirn = os.path.dirname(name)
     if duptype == "DUPTYPE_FIRST_OCCURRENCE":
@@ -87,7 +87,7 @@ for line in file(dup_filename, "r"):
         nodes.append( (dirn, int(size)) )
 
 g.simplify(combine_edges="sum")
-print g.summary()
+# print g.summary()
 out = add_pct(g, 95)
 
 def contract(g):
@@ -95,18 +95,18 @@ def contract(g):
     for vertex in g.vs:
         add_node(ng, os.path.dirname(vertex["name"]),
                  nd=vertex["nd"], nf=vertex["nf"])
-    print ng.summary()
+    # print ng.summary()
     for edge in g.es:
         e0, e1 = edge.tuple
         ng.add_edge(os.path.dirname(g.vs["name"][e0]),
                     os.path.dirname(g.vs["name"][e1]),
                     weight=edge["weight"], count=edge["count"])
-    print ng.summary()
+    # print ng.summary()
     ng.simplify(combine_edges="sum")
     return ng
 
 g = contract(g)
-print g.summary()
+# print g.summary()
 out2 = add_pct(g, 95)
 
 def comp_tuple(x,y):
@@ -119,12 +119,13 @@ def comp_tuple(x,y):
 def printout(out):
     out.sort(comp_tuple)
     for o in out:
-        print o[1], o[2], o[3]
-        print o[4], o[5], o[6], "\n"
-    print len(out), int(tot_size/1024/1024/1024),"G"
+        pct, name0, nf0, pct0, name1, nf1, pct1, count = o
+        print name0, nf0, count, pct0
+        print name1, nf1, count, pct1, "\n"
 
-#            print( "%5.1f\n%s\t%d\t%d\n%s\t%d\t%d\n" % (pct,
-#                              g.vs["name"][e0], nf0, pct0,
-#                              g.vs["name"][e1], nf1, pct1) )
+#       print( "%5.1f\n%s\t%d\t%d\n%s\t%d\t%d\n" % (pct,
+#             name0, nf0, pct0, name1, nf1, pct1) )
 
+printout(out)
+print "----------", len(out), int(tot_size/1024/1024/1024),"G"
 printout(out2)
