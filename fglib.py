@@ -15,7 +15,6 @@ class FolderGraph(igraph.Graph):
         self.add_vertex(name, nd=int(d), nf=int(f))
 
     nodes = []
-    self.tot_size = 0
     for line in file(dup_filename, "r"):
         if line.startswith("#"):
             continue
@@ -29,7 +28,6 @@ class FolderGraph(igraph.Graph):
             self.join_nodes(nodes)
             nodes = [ (dirn, int(size)) ]
         else:
-            self.tot_size += int(size)
             nodes.append( (dirn, int(size)) )
     self.join_nodes(nodes)
 
@@ -48,41 +46,46 @@ class FolderGraph(igraph.Graph):
               dst = nodes[j]
               self.add_edge(src[0], dst[0], weight=src[1], count=1)
 
-  def printout(self, thr, out = []):
-      for edge in self.es:
-          e0, e1 = edge.tuple
-          count = edge["count"]
-          nf0 = self.vs["nf"][e0]
-          nf1 = self.vs["nf"][e1]
-          try:
-              pct0 = int(count*1000/nf0)/10
-          except ZeroDivisionError:
-              print self.vs["name"][e0], nf0, nf1, count
-              pct0 = 0
-          try:
-              pct1 = int(count*1000/nf1)/10
-          except ZeroDivisionError:
-              print self.vs["name"][e0], nf0, nf1, count
-              pct1 = 0
-          pct = max(pct0, pct1)
-          if pct >= thr:
-              out.append( (pct, self.vs["name"][e0], nf0, pct0,
-                                self.vs["name"][e1], nf1, pct1, count) )
+  def printout(self, thr):
+    out=[]
+    tot_size=0
+    for edge in self.es:
+      e0, e1 = edge.tuple
+      count = edge["count"]
+      nf0 = self.vs["nf"][e0]
+      nf1 = self.vs["nf"][e1]
+      try:
+        pct0 = int(count*1000/nf0)/10
+      except ZeroDivisionError:
+        print self.vs["name"][e0], nf0, nf1, count
+        pct0 = 0
+      try:
+        pct1 = int(count*1000/nf1)/10
+      except ZeroDivisionError:
+        print self.vs["name"][e0], nf0, nf1, count
+        pct1 = 0
+      pct = max(pct0, pct1)
+      if pct >= thr:
+        tot_size += edge["weight"]
+        out.append( (pct, self.vs["name"][e0], nf0, pct0,
+                          self.vs["name"][e1], nf1, pct1, count) )
 
-      def comp_tuple(x,y):
-          if(x[0]<y[0]):
-              return -1
-          if(x[0]==y[0]):
-              return 0
-          return 1
+    def comp_tuple(x,y):
+      if(x[0]<y[0]):
+          return -1
+      if(x[0]==y[0]):
+          return 0
+      return 1
 
-      out.sort(comp_tuple)
-      for o in out:
-        pct, name0, nf0, pct0, name1, nf1, pct1, count = o
-        print name0, count, nf0, pct0, "%"
-        print name1, count, nf1, pct1, "%\n"
-#       print( "%5.1f\n%s\t%d\t%d\n%s\t%d\t%d\n" % (pct,
+    out.sort(comp_tuple)
+    for o in out:
+      pct, name0, nf0, pct0, name1, nf1, pct1, count = o
+      print name0, count, nf0, pct0, "%"
+      print name1, count, nf1, pct1, "%\n"
+#     print( "%5.1f\n%s\t%d\t%d\n%s\t%d\t%d\n" % (pct,
 #             name0, nf0, pct0, name1, nf1, pct1) )
+    print "---------- %d %dG" %(len(out), int(tot_size/1024/1024/1024))
+
 
   def contract(self):
     a = {x:os.path.dirname(x) for x in self.vs["name"]} #  name of ancestors of each node

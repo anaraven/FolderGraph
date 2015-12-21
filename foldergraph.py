@@ -9,16 +9,25 @@ dup_filename = "mybookfiles.txt"
 file_filename = "files.txt"
 ignore_fname = "ignore.txt"
 
-g = fg.FolderGraph(file_filename, ignore_fname, dup_filename)
-print g.summary()
-
+g = fg.FolderGraph(file_filename, ignore_fname, dup_filename,1e6)
 g.simplify(combine_edges=sum)
 print g.summary()
 g.printout(95)
-print "----------", int(g.tot_size/1024/1024/1024),"G" # len(out),
 
 g.contract()
-print g.summary()
 g.simplify(combine_edges=sum)
 print g.summary()
-g.printout(50)
+g.printout(90)
+
+g.contract()
+g.simplify(combine_edges=sum)
+print g.summary()
+g.printout(90)
+
+g.contract()
+g.simplify(combine_edges=sum)
+print g.summary()
+g.printout(90)
+
+
+## next step: find unmatched files
