@@ -42,19 +42,18 @@ def add_pct(g, thr, out = []):
     return out
 
 def contract(g):
-    ng = igraph.Graph(directed=False)
-    for vertex in g.vs:
-        add_node(ng, os.path.dirname(vertex["name"]),
-                 nd=vertex["nd"], nf=vertex["nf"])
-    # print ng.summary()
-    for edge in g.es:
-        e0, e1 = edge.tuple
-        ng.add_edge(os.path.dirname(g.vs["name"][e0]),
-                    os.path.dirname(g.vs["name"][e1]),
-                    weight=edge["weight"], count=edge["count"])
-    # print ng.summary()
-    ng.simplify(combine_edges="sum")
-    return ng
+  a = {x:os.path.dirname(x) for x in g.vs["name"]} #  name of ancestors of each node
+  b = {x:1 for x in a.values()}.keys() #  list of internal nodes names
+  c = dict(zip(b, range(len(b)))) # new numbers for internal nodes
+  def y(x):
+    if c.has_key(x):
+      return c[x]
+    else:
+      return c[a[x]]
+  g.contract_vertices([y(x) for x in g.vs["name"]],
+      combine_attrs={"name":None, "nf":sum, "nd":sum})#  {"name":"first", "nf":"sum", "nd":"sum"})
+  g.vs["name"] = b
+
 
 def comp_tuple(x,y):
     if(x[0]<y[0]):
@@ -84,5 +83,3 @@ class Ignored(object):
           if line.find(patrn)>=0:
               return True
       return False
-
-    
